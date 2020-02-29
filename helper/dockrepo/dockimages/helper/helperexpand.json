@@ -1,1 +1,7 @@
-creazione
+{
+  "package": "helper",
+  "status": "done",
+  "filetargz": "helperdirs.tar.gz",
+  "githubgzfile": "https://github.com/fpirri/gothings-cloud/blob/master/dockrepo/sysarchive/helperdirs.tar.gz?raw=true",
+  "script": false
+}
