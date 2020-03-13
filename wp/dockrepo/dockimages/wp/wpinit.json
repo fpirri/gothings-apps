@@ -1,0 +1,5 @@
+{
+  "package": "cloud",
+   "status": "todo",
+   "script": "dockrepo/sysdata/wp/wpinit.sh"
+}
