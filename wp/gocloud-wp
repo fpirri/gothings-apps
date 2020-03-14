@@ -509,7 +509,7 @@ verifyinit() {
   local filejson status script temp nvar
   filejson="${HOMEDIR}dockrepo/dockimages/${APPNAME}/${APPNAME}init.json"
   #  file github:
-  #    https://github.com/fpirri/gothings-apps/blob/master/dockrepo/dockimages/${APPNAME}/${APPNAME}init.json
+  #    https://github.com/fpirri/gothings-cloud-apps/blob/master/dockrepo/dockimages/${APPNAME}/${APPNAME}init.json
   #
   echo "    <-- configuration data read from ${filejson}"
   ################## ???  script="${HOMEDIR}dockrepo/sysdata/${APPNAME}/${APPNAME}init.sh"
@@ -838,7 +838,7 @@ echo "      verify ${APPNAME} expand config file ..."
 #
 FILECONF="${FILEEXPAND}"       #  file di configurazione della fase expand
 # assicurati che il file di configurazione esista
-getgitfile "${APPNAME}expand.json" "gothings-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+getgitfile "${APPNAME}expand.json" "gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
 ITEXISTS=$?
 if [[ $ITEXISTS -ne 1 ]]; then
   echo "      <-- configuration install file DOES NOT exists."
@@ -887,7 +887,7 @@ echo "      verify ${APPNAME} init config file ..."
 #
 FILECONF="${FILEINIT}"       #  file di configurazione della fase init
 # assicurati che il file di configurazione esista
-getgitfile "${APPNAME}init.json" "gothings-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+getgitfile "${APPNAME}init.json" "gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
 ITEXISTS=$?
 if [[ $ITEXISTS -ne 1 ]]; then
   echo "      <-- configuration install file DOES NOT exists."
@@ -926,7 +926,7 @@ echo "      verify ${APPNAME} install config file ..."
 #
 FILECONF="${FILEINSTALL}"       #  file di configurazione della fase install
 # assicurati che il file di configurazione esista
-getgitfile "${APPNAME}install.json" "gothings-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+getgitfile "${APPNAME}install.json" "gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
 ITEXISTS=$?
 if [[ $ITEXISTS -ne 1 ]]; then
   echo "      <-- configuration install file DOES NOT exists."
