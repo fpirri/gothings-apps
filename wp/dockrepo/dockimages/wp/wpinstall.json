@@ -1,5 +1,5 @@
 {
   "package": "cloud",
    "status": "todo",
-   "script": "dockrepo/sysdata/wp/wpinstall.sh"
+   "script": "dockrepo/sysdata/wp/wpconfig/wpinstall.sh"
 }
