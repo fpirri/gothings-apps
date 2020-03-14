@@ -1,0 +1,851 @@
+#!/bin/bash
+#                                                                    2020-02-21
+#  GOTHINGS:  servizio DB
+#
+                                                                 VERSION="0.01.03"
+#
+#  Vedi doc in:
+#    .../WP-Sviluppi/gothings/README.gothings.cloud
+#
+#
+#===================================================================
+#
+#  Versione TEMPORANEA per sviluppare la versione GENERICA della APP
+#  
+#  1. si gira la versione temporanea fino a che non fuziona correttamente
+#  2. si sdoppia in due: prefisso + coda generica
+#  3. il prefisso esegue il settaggio di tutte le variabili e esegue 'source' sulla coda
+#  4. la coda esegue  il tutto ...
+#  ====> FINE!
+#
+#
+####################################################################################################
+#####     GOCLOUD-DB  -  sezioni definite:
+#
+#                                                                            GOCLOUD-App  config
+#                                                                            GOCLOUD-App  generic
+#                                                                            GOCLOUD-App  verify
+#                                                                            GOCLOUD-App  base logic
+#                                                                            GOCLOUD-App  main logic
+#                                                                            GOCLOUD-App  menu
+#
+####################################################################################################
+#
+#
+#
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#echo "Questo script e' WORK-IN-PROGRESS"
+#echo
+#echo "Prima o poi verra' finito!"
+#echo
+#exit
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+#
+#==============================================================================
+echo
+echo "====================================================== GOTHINGS for cloud"
+echo "      Control loader for GOTHINGS CLOUD docker system."
+echo "========================================================================="
+echo
+#
+####################################################################################################
+#######################################################################     GOCLOUD-App  config  ###
+####################################################################################################
+#
+# definizione droplets:
+#
+#  echo "gothings-v09        Public: 104.248.95.29     Local: 10.133.94.60"    <--  DB
+#  echo "gothings-v09-base   Public: 188.166.70.203    Local: 10.133.3.65"     <--  BASE  &  WP
+#
+#APPNAME="db"
+#DISPLAYNAME="MariaDB"
+APPNAME="helper"
+DISPLAYNAME="HELPER"
+DROPLET=(hostname)
+DROPADDR="104.248.95.29"
+PRIVATEIP="10.133.94.60"
+
+USERNAME=yesfi
+HOMEDIR="/home/${USERNAME}/"
+INSTALLDIR="${HOMEDIR}dockrepo/dockimages/"      #  dir dei file di configurazione
+FILEEXPAND="${INSTALLDIR}${APPNAME}/${APPNAME}expand.json"       #  files di configurazione
+FILEINIT="${INSTALLDIR}${APPNAME}/${APPNAME}init.json"
+FILEINSTALL="${INSTALLDIR}${APPNAME}/${APPNAME}install.json"
+
+#
+#
+####################################################################################################
+#######################################################################   GOCLOUD-App  generic   ###
+####################################################################################################
+#
+#
+# ----------------------------------
+# Define variables
+#
+EDITOR=nano
+PASSWD=/etc/passwd
+RED='\033[0;41;30m'
+STD='\033[0;0;39m'
+#
+#getgitfile "${APPNAME}expand.json" "versione per gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+#           https://github.com/fpirri/versione per gothings-cloud-apps/raw/master/sysarchive/helperdirs.tar.gz
+#           https://github.com/fpirri/versione per gothings-cloud-apps/raw/master/
+
+#           https://raw.githubusercontent.com/fpirri/
+GITHUBHOME="https://raw.githubusercontent.com/fpirri/" #     :   prefisso per i progetti fpirri su github
+#
+#  GITHUBPATH  :  versione per gothings-cloud-apps/blob/master/                 :   repository da scaricare        $2
+#  RASPIPATH   :  dockrepo/dockimages/<app>/                 :   path del file                  $3
+#                                                                identici su github e su raspi
+#  nome file   :    cloudinstall.json                        :   nome file da scaricare        $1
+#
+#-----------------   GLOBAL da ridefinire
+DEBUGLOG=""
+RETLEVEL=0  # 0 : tutto OK; 1+ : situazione non valida ...
+ITEXISTS=0  # 1 se il cercato esiste, 0 altrimenti
+FILE=""     # Nome del file in fileexists()
+MENUTRAP=0  #  66 : exit menu
+
+cd ${HOMEDIR} #work on user <USERNAME>  home
+
+# ----------------------------------
+# User defined functions
+# ----------------------------------
+#
+##########################################################################
+avanti(){
+  # Domanda di continuazione personalizzabile
+  # call:    avanti $1
+  #   $1:    "<stringa di domanda>"
+  echo "----------------------------------------------------------------"
+  read -rsp "$1" -n 1 key
+  echo
+}
+#
+##########################################################################
+pause() {
+#  Domanda 'continue or exit'
+  avanti 'Press any key to continue or ^C to exit ...'
+}
+#
+##########################################################################
+notavailable(){
+  #  Funzione prevista, ma ancora DA FARE
+  echo 
+  echo
+  echo "----------------------------------------------------------------"
+  echo "Unfortunately, this function is planned, but not available yet."
+  echo "Please retry later ..."
+  echo
+  pause
+}
+#
+##########################################################################
+functiontodo(){
+  # BOH!  Questa funzione e' ancora DA FARE
+  echo 
+  echo
+  echo "----------------------------------------------------------------"
+  echo "La funzione ancora non c'e'"
+  echo
+  echo "Qui ci sara' una funzione, quando sara' fatta ..."
+  echo
+  #exit
+  pause "?"
+}
+#
+##########################################################################
+toupdate(){
+  #  segnala funzione IN CORSO DI MODIFICA
+  echo 
+  echo
+  echo "------------------------------------------------------------ ???:"
+  echo
+  echo "This function is WORK IN PROGRESS"
+  echo "A new definition & rewriting is on course"
+  echo
+  #exit
+  pause "?"
+}
+#
+##########################################################################
+errmessage(){
+  #  $1 :  nome del file non trovato
+  #  $2 :  avviso all'utente, come '... il file xxx e' essenziale ...'
+  echo 
+  echo "------------------------------------------------------"
+  echo -e "${RED} ERROR on file: $1 - debug message: ${STD}"
+  echo $DEBUGLOG
+  echo -e "$2"
+  echo "------------------------------------------------------"
+  echo 
+}
+#
+##########################################################################
+stopmenu(){
+  #  $1 :  nome del file non trovato
+  #  $2 :  avviso all'utente, come '... il file xxx e' essenziale ...'
+  errmessage "$1" "$2"
+  echo "Cannot continue."
+  echo 
+  MENUTRAP=66
+  RETLEVEL=66
+  return 66
+}
+#
+##########################################################################
+showsubtitle(){
+  # 1. SHOW submenu header
+  #
+  # call:    showsubtitle $1
+  #    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  # $1:"         Sub menu title"
+  #
+  clear
+  echo 
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo "$1"
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+}
+#
+##########################################################################
+bugmessage(){
+  # stampa $debuglog ed un avviso di errore
+  #
+  #  $1 :  ERROR oppure WARNING
+  #  $2 :  codice di errore
+  #  stampa piccola storia  <-- debuglog
+  #  $3 :  avviso all'utente, come '... il file xxx e' essenziale ...'
+  echo 
+  echo "------------------------------------------------------"
+  echo -e "${RED} $1 $2 - debug message: ${STD}"
+  echo ${debuglog}
+  echo -e "$3"
+  echo "------------------------------------------------------"
+  echo 
+}
+#
+##########################################################################                          ** IN SOSTITUZIONE **
+json2string() {
+  # Trasforma valori json da stringa in stringa nulla
+  #   $1    nome variabile da verificare
+  typeset -n ref1=$1 #                    ref1 punta alla variabile json
+  case "$ref1" in #                       check valori anomali --> stringa ""
+    null|true|false)
+      ref1=""
+      echo "null value"
+      return 0
+      ;;
+    *)
+      echo "value: $ref1"
+      return 1
+  esac
+}
+#
+##########################################################################
+#
+showcontainers(){
+  # 1. SHOW containers status
+  #               "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  #  showsubtitle "         sottotitolo piu' o meno centrato"
+  #
+  local max count
+  max=10
+  count=15 # deve essere: count > max
+  while true; do
+    count=$((count+1))
+    if [[ count -ge max ]]; then
+      clear
+      count=0
+      showsubtitle "      MANAGE:  SHOW all containers"
+      echo -en "\033[6;0H"
+    fi
+    docker ps -a --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}"
+    echo "----------------------------------------------------------------- ${count}   "
+    echo -n "                             Press any key to return at main menu                   "
+    echo -n "                                                                                    "
+    echo -en "\033[6;0H"
+    read -t 3 -N 1 input
+    if [ $? == 0 ]; then
+      echo "Back to main menu"
+      break 
+    fi
+    #if [[ $input = "q" ]] || [[ $input = "Q" ]]; then
+    #  echo "Back to main menu"
+    #  break 
+    #fi
+  done
+}
+#
+##########################################################################
+getgitfile(){    # Lettura file da github
+  # Verify file existence, get it from github if not
+  #    eventually, make it executable  (input var $4=="EXEC")
+  #
+  #  use globals:
+  #    DEBUGLOG=""     # utile nel debug
+  #    ITEXISTS=0      #  1 : file esiste    0 : file assente
+  #
+  #
+  #     <-- se esiste il file $1 ed ha lunghezza > 0 :
+  #         <-- si va avanti senza altre azioni
+  #     <-- altrimenti si prova a scaricare il file da github               AGGIUSTARE dopo ......
+  #     <-- si riprova il test di lunghezza
+  #         se non funziona si torna con ITEXISTS=0
+  #     
+  # call :    findnodeapp $1 $2 $3 [$4]
+  #   $1 :    "nomefile"
+  #   $2 :    "github project branch"   <-- togliere la 'location'==="https://github.com/fpirri/"
+  #   $3 :    "raspi path after $HOMEDIR"   <--   raspi path===github path 
+  #   $4 :    optional input variable, make file executable if value is "EXEC"
+  #        --> attenti alle barre inizio-fine--> $1: no-no ;  $2: no-si ;  $3: no-si
+  # RETURN:
+  #           ITEXISTS = 1 se esiste, 0 altrimenti
+  #####
+  # example:
+  #    getgitfile "${APPNAME}expand.json" "versione per gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+  #
+  #  bash:  -s file  True if file exists and has a size greater than zero
+  #############################################  DEBUG info:
+  echo "getgitfile() debug info"
+  echo '  $1  nomefile : ' $1
+  echo '  $2  github project branch : ' $2
+  echo '  $3  raspi path : ' $3
+  echo '  $4  option var : ' $4
+  #####
+  #
+  local filegit githubfile
+  #
+  FILEGIT="${HOMEDIR}$3$1"
+  echo "   Il file cercato e': $FILEGIT"
+  DEBUGLOG="|| getgitfile() INFO || Il file cercato e': $FILEGIT"
+  if [[ -s $FILEGIT ]]; then
+    ITEXISTS=1    # file exists and length > 0
+    DEBUGLOG="$DEBUGLOG | $FILEGIT esiste |"
+  else            # si prova a scaricarlo
+    githubfile="${GITHUBHOME}$2$3$1"
+    DEBUGLOG="$DEBUGLOG | $FILEGIT does not exist | download githubfile: $githubfile |"
+    wget -O "$FILEGIT" "$githubfile"
+    if [[ -s $FILEGIT ]]; then
+      ITEXISTS=1    # file exists and length > 0
+      DEBUGLOG="$DEBUGLOG | $FILEGIT trovato |"
+      if [ "$4" == "EXEC" ]; then      # option: make it executable
+        chmod +x "$FILEGIT"
+      fi
+    else
+      ITEXISTS=0    # file introvabile !
+      DEBUGLOG="$DEBUGLOG | $FILEGIT introvabile |"
+      echo $DEBUGLOG                               ########### Stampa sempre mentre sviluppo ...
+    fi
+  fi
+  return $ITEXISTS
+}
+#
+##########################################################################
+consoleexit() {
+  #  Return to shell
+  echo
+  echo
+  echo "---------------------------------------------------------"
+  echo "Thank you for using   G O T H I N G S   C L O U D   MENU"
+  echo
+  MENUTRAP=0
+  exit 0
+}
+#
+##########################################################################
+terminal(){
+  # Apri un terminale in questa droplet
+  echo
+  echo "----------------------------------------------------------------"
+  echo "Open a terminal on this droplet"
+  echo "                                      <-- Type 'exit' to go back"
+  echo
+  bash
+  echo
+  echo " going back ..."
+  sleep 2
+}
+#
+####################################################################################################
+#######################################################################     GOCLOUD-App  verify  ###
+####################################################################################################
+#
+#
+##########################################################################       versione 2019-11-20
+
+####------------------------------------------------------------------ application dependencies ...\
+
+verifyexpand() {
+
+#### versione per MariaDB  -  generalizzazione da verificare
+
+  #  si verifica <appname>expand.json per vedere se l'espansione e' da fare,
+  #  ovvero se e' gia' fatta o non e' comunque necessaria:
+  #
+  #  ritorna 0 se l'operazione non ha prodotto errori
+  #          1 se ci sono stati errori ...
+  #
+  #  error details in:  .../github-gothings/README.github.gothings
+  #
+  #  il dir .../dockimages/<appname> DEVE contenere il file di configurazione <appname>expand.json
+  #  nello stesso dir sono eventualmente presenti i files <appname>expand.sh e <appname>dirs.tar.gz
+  #  TUTTE le info necessarie sono nel .json
+  #
+  local filejson status filetargz githubgzfile script temp debuglog nvar
+  filejson="${HOMEDIR}dockrepo/dockimages/${APPNAME}/${APPNAME}expand.json"
+  #
+  echo "    <-- configuration data read from ${filejson}"
+  temp=($(cat "${filejson}" | jq -r '.status,.filetargz,.githubgzfile,.script'))
+  # verifica che se ci sono null!!
+  echo "    <--       status: ${temp[0]}"
+  echo "    <--   filetar.gz: ${temp[1]}"
+  echo "    <-- githubgzfile: ${temp[2]}"
+  echo "    <--       script: ${temp[3]}"
+  # aggiusta le variabili, se necessario
+  nvar=0
+  status=${temp[0]}
+  json2string status
+  (( nvar += $? ))
+  filetargz=${temp[1]}
+  json2string filetargz
+  (( nvar += $? ))
+  githubgzfile=${temp[2]}
+  json2string githubgzfile
+  (( nvar += $? ))
+  if [[ "${nvar}" -ne 3 ]]; then
+    debuglog="ERROR 1 - JSON file ${filejson} returned some null values"
+    bugmessage ERROR 1 "    JSON returned invalid values"
+    return 1 #                                                                 ERROR 1: Invalid JSON
+  fi
+  echo "    <-- non-null variables: ${nvar}"
+  # verifica stringhe nulle
+  temp=$((${#temp} * ${#status} * ${#filetargz} * ${#githubgzfile}))
+  if [[ "${temp}" -eq 0 ]]; then
+    debuglog="ERROR 2 - JSON returned empty string"
+    bugmessage ERROR 2 "    JSON file ${filejson} returned empty string"
+    return 2 #                                                                 ERROR 2: Invalid JSON
+  fi
+  # valori apparentemente accettabili, andiamo avanti
+  echo "    <-- variable types OK"
+  filetargz="${HOMEDIR}${filetargz}"
+  echo "    <-- sysdata for CLOUD environment read from ${filetargz}"
+  debuglog="|| verify expand |"
+  case "${status}" in
+    todo) #                                      expand archive .tar.gz
+      echo "    <--  expand to be done"
+      if [[ -s "${filetargz}" ]]; then # file exists and length > 0
+        debuglog="${debuglog}| ${filetargz} esiste |"
+      else #                             il file non esiste, proviamo a scaricarlo
+        debuglog="${debuglog}| ${filetargz} does not exist | download githubgzfile: ${githubgzfile} |"
+        wget -O "${filetargz}" "${githubgzfile}"
+        if [[ -s "${filetargz}" ]]; then
+          debuglog="${debuglog}| ${filetargz} trovato |" #  il file e' stato trovato e verra' espanso
+          echo "    <--  archive file exists"
+        else
+          debuglog="{$debuglog}| ${filetargz} introvabile |"
+          bugmessage ERROR 66 "    file not found"
+          return 66
+        fi
+      fi
+      echo "    <--  expand archive file"
+      sudo tar xpf "${filetargz}" -C "$HOMEDIR" #   si espande l'archivio
+      temp=$?
+      if [[ ! $temp -eq 0 ]]; then
+        debuglog="{$debuglog}| ${filetargz} expansion failed! - return: ${temp} | ERROR 66"
+        bugmessage ERROR 66 "    archive expansion failed"
+        return 66
+      fi
+      # espansione effettuata:  aggiorna il .json
+      echo
+      echo "    <-- expand OK, change .json status from 'todo' to 'done'"
+      echo "$(cat "${filejson}" | jq -r '.status |= "done"')" > "${filejson}.new"
+      temp=$?
+      echo "    <-- save existing file into 'old'"
+      cp -r "${filejson}"  "${filejson}.old"
+      echo "    <-- copy 'new' file onto ${APPNAME}expand.json"
+      cp -r "${filejson}.new"  "${filejson}"
+      echo -n "    <-- verify <appname>expand.json status :"
+####------------------------------------------------------------------ application dependencies .../
+      temp=($(cat ${filejson} | jq -r '.status'))
+      echo ${temp}
+      if [ "${temp}" != "done" ]; then
+        bugmessage WARNING 5 "    ERROR : can't update ${filejson} file"
+        return 5
+      fi
+      echo "    <-- .json status update OK"
+      echo "    ------------------------------"
+      ;;
+    done)
+      echo "    <-- expand not needed"
+      ;;
+    *)
+      bugmessage WARNING 3 "    ERROR 3 - JSON status value is invalid"
+      return 3
+      ;;
+  esac
+  return 0
+  echo "1- questo non verra' MAI stampato!"
+}
+#
+##########################################################################
+verifyenv() {
+#  Verifica che i file .env-* siano tutti aggiornati !!!!!
+  echo
+  echo
+  echo "---------------------------------------------------------"
+  echo "Verify environment on this computer"
+  echo
+  echo "Per ora e' una finzione ..."
+  echo
+  echo "simulo che vada tutto bene!"
+  echo
+  avanti 'Press any key to continue or ^C to exit ...'
+  echo
+  return 0
+  echo "2. questo non verra' MAI stampato!"
+}
+#
+####################################################################################################
+##################################################################     GOCLOUD-App  base logic   ###
+####################################################################################################
+#
+#
+##########################################################################
+start() {
+#  START APPLICATION
+  echo
+  echo
+  echo "---------------------------------------------------------"
+  echo "Use docker-compose to START ${DISPLAYNAME} container"
+  echo
+  echo "Starting docker-compose ..."
+  docker-compose -f "${HOMEDIR}dockrepo/sysdata/${APPNAME}/gothings${APPNAME}.yml" up -d
+  echo "Done."
+  sleep 2
+}
+#
+##########################################################################
+#  STOP APPLICATION
+pause() {
+  echo
+  echo
+  echo "---------------------------------------------------------"
+  echo "Use docker-compose to STOP ${DISPLAYNAME} container"
+  echo
+  echo "This operation will STOP your ${DISPLAYNAME} container"
+  echo "You can re-run it with the START operation."
+  echo "Permanent user data will NOT be destroyed"
+  read -rsp "Do you like to STOP ${DISPLAYNAME} container? [y/N] " -n 1 key
+  case "$key" in
+      [yY]) 
+        echo
+        echo "Using docker-compose to stop ${DISPLAYNAME} container ..."
+        docker-compose -f "${HOMEDIR}dockrepo/sysdata/${APPNAME}/gothings${APPNAME}.yml" stop
+        echo
+        echo "done."
+        sleep 3
+        ;;
+      *)
+        echo
+        echo "Back to choice"
+        sleep 2
+        ;;
+  esac
+}
+#
+##########################################################################
+destroy() {
+#  DESTROY APPLICATION
+  echo
+  echo
+  echo "---------------------------------------------------------"
+  echo "Use docker-compose to STOP & DESTROY ${DISPLAYNAME} container"
+  echo 
+  echo "------------------ ATTENTION, please,"
+  echo "This operation will STOP & DESTROY your running ${DISPLAYNAME} container !"
+  echo "Anyway you can re-create and run it with the START operation."
+  echo "Permanent user data will NOT be destroyed"
+  read -rsp "Do you like to STOP & DESTROY? [y/N] " -n 1 key
+  case "$key" in
+      [yY]) 
+        echo
+        echo "Using docker-compose to stop & destroy ${DISPLAYNAME} container ..."
+        docker-compose -f "${HOMEDIR}dockrepo/sysdata/${APPNAME}/gothings${APPNAME}.yml" down
+        echo
+        echo "done."
+        sleep 3
+        ;;
+      *)
+        echo
+        echo "Back to choice"
+        sleep 2
+        ;;
+  esac
+}
+#
+####################################################################################################
+##################################################################     GOCLOUD-App  main logic   ###
+####################################################################################################
+#
+echo
+echo "Verify GOTHINGS CLOUD software installation ..."
+#
+echo "    verify ${DISPLAYNAME} directories ..."
+#
+#
+#################################################################################
+################################################################  set directories
+#
+####------------------------------------------------------------------ application dependencies ...\
+if [[ ! -s "${HOMEDIR}dockrepo" ]]; then
+  mkdir dockrepo/
+fi
+if [[ ! -s "${HOMEDIR}dockrepo/dockimages" ]]; then
+  mkdir dockrepo/dockimages
+fi
+if [[ ! -s "${HOMEDIR}dockrepo/dockimages/${APPNAME}" ]]; then
+  mkdir dockrepo/dockimages/${APPNAME}
+fi
+if [[ ! -s "${HOMEDIR}dockrepo/sysdata" ]]; then
+  mkdir dockrepo/sysdata
+fi
+#################################################################
+###########  ELIMINARE definitivamente ???
+#if [[ ! -s "${HOMEDIR}dockrepo/dockimages/${APPNAME}/var_www_html" ]]; then
+#  mkdir dockrepo/dockimages/${APPNAME}/var_www_html
+#fi
+#if [[ ! -s "${HOMEDIR}dockrepo/sysdata/var_www" ]]; then
+#  mkdir dockrepo/sysdata/var_www
+#fi
+#if [[ ! -s "${HOMEDIR}dockrepo/sysdata/var_www/html" ]]; then
+#  mkdir dockrepo/sysdata/var_www/html
+#fi
+#if [[ ! -s "${HOMEDIR}dockrepo/sysdata/var_www/test" ]]; then
+#  mkdir dockrepo/sysdata/var_www/test
+#fi
+#if [[ ! -s "${HOMEDIR}dockrepo/sysdata/cloud" ]]; then
+#  mkdir dockrepo/sysdata/cloud
+#fi
+###################################################################
+####------------------------------------------------------------------ application dependencies .../
+#
+#################################################################################
+###################################################################  phase EXPAND
+echo
+echo "    EXPAND phase starts ..."
+echo "      verify ${APPNAME} expand config file ..."
+#
+FILECONF="${FILEEXPAND}"       #  file di configurazione della fase expand
+# assicurati che il file di configurazione esista
+getgitfile "${APPNAME}expand.json" "versione per gothings-cloud-apps/master/${APPNAME}/" "dockrepo/dockimages/${APPNAME}/"
+ITEXISTS=$?
+if [[ $ITEXISTS -ne 1 ]]; then
+  echo "      <-- configuration install file DOES NOT exists."
+  stopmenu "${FILECONF}"  "file ${FILECONF} is essential for GoThings"
+  exit                       # interrommpere il menu principale
+fi
+echo "      <-- exists, verifying content ..." 
+#
+verifyexpand
+#
+#----  verifica parte expand
+# - si verifica <app>install.json per vedere se l'espansione e' da fare,
+#    ovvero se e' gia' fatta o non e' comunque necessaria:
+#
+#  ritorna:  0  se l'operazione expand non ha prodotto errori
+#           !0  se ci sono stati errori ...
+#
+#  error details in:  .../github-gothings/README.github.gothings
+#
+RETLEVEL=$?
+echo "    <-- expand phase returns code ${RETLEVEL}"
+if [ ${RETLEVEL} -gt 0 ]; then
+  debuglog="Expand phase not good"
+  if [ ${RETLEVEL} -lt 50 ]; then
+    echo
+    bugmessage ERROR "${RETLEVEL}" "    expand phase"
+  else
+    echo
+    bugmessage ERROR "${RETLEVEL}" "    expand phase"
+  fi
+  MENUTRAP=${RETLEVEL}
+  pause
+  exit ${MENUTRAP}
+fi
+echo
+echo "############################"
+echo "          EXPAND phase done."
+#
+echo
+
+###########################
+#  PARTE ELIMINATA !!
+#    (sara' ri-aggiunta in seguito)
+parteeliminata() {
+#  FINE PARTE ELIMINATA !!!
+  echo "NON CI SONO !"
+}
+##############################
+echo
+echo "Verifica init NON ESEGUITA!"
+echo
+echo
+echo "Verifica install NON ESEGUITA!"
+echo
+echo
+echo "       --> main logic:    ELIMINATA!"
+echo
+
+#
+#################################################################################
+#############################################################  verify environment
+#
+#----  verifica environment:  si cercano i file .env-* in sysdata
+#  questi DEVONO essere diversi da quanto memorizzato nella fase expand
+#
+#  - si cerca 'filetargz' usato nella fase expand
+#  - al suo interno si cercano i file '.env-*'
+#  - si crea un file di controllo
+#  - si verifica che i valori nel file .env-* siano diversi dagli originali ...
+#  - ci si blocca se non va bene
+#  ---> alternativa:  cercare il nome file nel <compose>.yml
+#
+#  ritorna:  0  se l'operazione environment non ha prodotto errori
+#           !0  se ci sono stati errori ...
+#
+#  error details in:  .../github-gothings/README.github.gothings
+#
+echo
+echo "    Verify environments ..."
+echo
+verifyenv
+RETLEVEL=$?
+echo "    <-- environment phase returns code ${RETLEVEL}"
+if [ ${RETLEVEL} -gt 0 ]; then
+  debuglog="Environment phase not good"
+  if [ ${RETLEVEL} -lt 50 ]; then
+    echo
+    bugmessage ERROR "${RETLEVEL}" "    environment phase"
+  else
+    echo
+    bugmessage ERROR "${RETLEVEL}" "    environment phase"
+  fi
+  MENUTRAP=${RETLEVEL}
+  pause
+  exit ${MENUTRAP}
+fi
+echo
+echo "############################"
+echo "          ENVIRONMENT phase done."
+#
+echo
+echo "      CONTINUE to the menu functions ..."
+
+#
+# CONTINUE to the menu functions
+#
+####################################################################################################
+#########################################################################     GOCLOUD-App  menu   ###
+####################################################################################################
+#
+#
+#==============================================================================
+echo
+echo "========================================================== GOTHINGS CLOUD"
+echo "        Loading ${DISPLAYNAME} menu ..."
+echo "========================================================================="
+echo
+#
+sleep 3
+#
+##########################################################################
+# function to display menus
+show_menus() {
+  clear
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ${APPNAME} v${VERSION}"
+  echo
+  echo "    GOTHINGS:   ${DISPLAYNAME} MENU"
+  echo
+  echo -n "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+  hostname
+  echo
+  echo "1. SHOW      container's status"
+  echo "2. START     ${DISPLAYNAME} container"
+  echo "3. PAUSE     ${DISPLAYNAME} container"
+  echo "4. DESTROY   ${DISPLAYNAME} container"
+  echo "   ---          future work"
+  #echo "5. ---         work todo"
+  #echo "6. ---         work todo"
+  #echo "7. ---         work todo"
+  echo "8. TERM      open terminal here"
+  echo "9. UPDATE    this menu"
+  echo "0. EXIT      return to console"
+}
+#
+# read input from the keyboard and take a action
+# invoke the function according to the entered number
+read_options(){
+	local choice
+  read -rsp $'Enter choice [ 1..9 or ^C to exit ] ' -n 1 choice
+	case "$choice" in
+		1) showcontainers;;
+    2) start;;
+		3) pause;;
+		4) destroy;;
+		5) toupdate;;
+		6) toupdate;;
+		7) toupdate;;
+		8) terminal;;
+		9) notavailable;;   #updatethismenu;;
+    0) consoleexit;;
+		*) echo -e "${RED}Error...${STD}" && sleep 2
+	esac
+}
+ 
+# ----------------------------------------------
+# Step #3: Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGQUIT SIGTSTP
+#trap '' SIGINT SIGQUIT SIGTSTP
+ 
+# -----------------------------------
+# Step #4: Main logic - infinite loop
+# ------------------------------------
+
+while true
+do
+  # internal trap
+  if [[ ${MENUTRAP} -eq 67 ]]
+  then
+    echo "------------------------------------------------------"
+    echo "GOTHINGS CLOUD Control Menu was downloaded from github,"
+    echo "You can re-execute it by typing './g' at the console"
+    echo "------------------------------------------------------"
+    echo
+    break  #-- stop menu
+  fi
+  if [[ ${MENUTRAP} -eq 66 ]]
+  then
+    echo 
+    echo "----------------------------------------------------------------"
+    echo " Are you sure that all necessary software was correctly loaded ?"
+    echo
+    echo " Please verify content of all JSON configuration files"
+    echo
+    echo " Please note that a working internet connection is needed to"
+    echo " dinamically update software during the first istallation and"
+    echo " during updates"
+    echo "----------------------------------------------------------------"
+    echo
+    break  #-- stop menu
+  fi
+	show_menus
+	read_options
+done
+echo
+echo "Shell terminated."
+echo
+#
