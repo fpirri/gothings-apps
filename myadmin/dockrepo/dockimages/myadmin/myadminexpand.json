@@ -1,6 +1,6 @@
 {
   "package": "myadmin",
-  "status": "done",
+  "status": "todo",
   "filetargz": "myadmindirs.tar.gz",
   "githubgzfile": "https://github.com/fpirri/gothings-cloud/blob/master/dockrepo/sysarchive/myadmindirs.tar.gz?raw=true",
   "script": false
