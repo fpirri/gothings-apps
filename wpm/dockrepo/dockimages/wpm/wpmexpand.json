@@ -1,1 +1,7 @@
-creazione
+{
+  "package": "wpm",
+  "status": "done",
+  "filetargz": "dockrepo/dockimages/dirs/wpmdirs.tar.gz",
+  "githubgzfile": "https://github.com/fpirri/gothings-cloud-apps/blob/master/wpm/wpmdirs.tar.gz?raw=true",
+  "script": false
+}

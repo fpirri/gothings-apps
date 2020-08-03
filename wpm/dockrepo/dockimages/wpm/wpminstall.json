@@ -1,0 +1,5 @@
+{
+  "package": "wpm",
+   "status": "done",
+   "script": "dockrepo/sysdata/wpm/wpmconfig/wpminstall.sh"
+}
