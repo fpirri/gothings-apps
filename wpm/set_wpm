@@ -1,1 +1,31 @@
-creazione set_wpm
+#!/bin/bash
+#                                                                    2020-02-07
+#  Set wp-config.php to multisite
+#
+#
+pause(){ #  continue or exit
+  #echo "----------------------------------------------------------------|"
+  read -rsp $'Press any key to continue or ^C to exit ...' -n 1 key
+}
+#
+USERNAME=yesfi
+HOMEDIR="/home/${USERNAME}/"
+#
+echo
+echo
+echo "-------------------------------------------------ATTENZIONE !!!"
+echo
+echo "This script will overwrite the standard wp-config.php with"
+echo "the multisite version in wp-config-multi.php"
+echo
+pause
+echo
+echo "---------------------------------------------------------"
+echo "Copy wp-config-multi over wp-config.php"
+sudo cp ${HOMEDIR}dockrepo/sysdata/var_www/html/wp-config-multi.php /home/yesfi/dockrepo/sysdata/var_www/html/wp-config.php
+echo
+echo "---------------------------------------------------------"
+echo "Verify:"
+cat ${HOMEDIR}dockrepo/sysdata/var_www/html/wp-config.php
+echo
+echo "------------------------------------------------------------ Done."
