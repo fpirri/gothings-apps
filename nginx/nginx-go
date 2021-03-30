@@ -1,0 +1,311 @@
+#!/bin/bash
+#                                                                     2021-03-29
+#  Menu script to install nginx app
+                                                              Version="0.01.13"
+                                                            ThisHost=(hostname)
+#
+#  *** Primo tentativo di controllo per multi-droplet dal PC ***
+#
+#  Menu per la gestione di TUTTO il sistema gothings da un menu' principale su PC
+#
+#  - download:                                                                       NON DISPONIBILE
+#      ??wget -O gocloud https://github.com/fpirri/gothings-cloud/blob/master/gothings??
+#
+################################################################################
+#
+
+#
+##########################################################################
+#
+# ----------------------------------
+# Define app
+AppName="nginx"
+AppDisplayName="Nginx Proxy"
+#
+# ----------------------------------
+# Define display
+MenuName="NGINX Proxy"
+MenuTag="${MENUNAME} v${Version}"
+#
+# ----------------------------------
+# variabili globali interne
+Home="/home/yesfi/"
+Dockrepo="/home/yesfi/dockrepo/"
+WorkDir=${Home}
+RetValue=3                                 # 3--> OK     5--> KO
+# ----------------------------------
+# costanti varie
+Red='\033[0;41;30m'
+Std='\033[0;0;39m'
+#
+#
+##########################################################################
+#  Funzioni utili
+##########################################################################
+avanti(){
+  # Domanda di continuazione personalizzabile
+  # call:    avanti $1
+  #   $1:    "<stringa di domanda>"
+  echo "----------------------------------------------------------------"
+  read -rsp "$1" -n 1 key
+  echo
+}
+#
+pause() {
+#  Domanda 'continue or exit'
+  avanti 'Press any key to continue or ^C to exit ...'
+}
+#
+##########################################################################
+dots(){
+# wait $1 seconds, printing dots on the screen
+#   $1 :  # of seconds to wait
+  local param1
+  printf -v param1 '%d\n' $1 2>/dev/null # converti in intero con tutti i controlli
+  while [ $param1 -gt 0 ]
+  do
+    echo -n "."
+    sleep 0.5
+    echo -n "."
+    sleep 0.5
+    let "--param1"
+  done
+}
+#
+##########################################################################
+dots_nl(){ #  Dots 'new line'
+# wait $1 seconds, printing dots on the screen
+#
+# add a newline at the end
+#
+  dots $1
+  echo
+}
+#
+##########################################################################
+showsubtitle(){
+  # 1. SHOW submenu header
+  #
+  # call:    showsubtitle $1
+  #    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  # $1:"         Sub menu title"
+  #
+  clear
+  echo 
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  echo "$1"
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+}
+#
+##########################################################################
+showcontainers(){
+  # 1. SHOW containers status
+  #               "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  #  showsubtitle "         sottotitolo piu' o meno centrato"
+  #
+  local max count
+  max=10
+  count=15 # deve essere: count > max
+  while true; do
+    count=$((count+1))
+    if [[ count -ge max ]]; then
+      clear
+      count=0
+      showsubtitle "      SHOW all containers"
+      echo -en "\033[6;0H"
+    fi
+    docker ps -a --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}"
+    echo "----------------------------------------------------------------- ${count}   "
+    echo -n "                             Press any key to return at main menu                   "
+    echo -n "                                                                                    "
+    echo -en "\033[6;0H"
+    read -t 3 -N 1 input
+    if [ $? == 0 ]; then
+      echo -en "\033[20;0H"
+      echo "Back to main menu"
+      break 
+    fi
+  done
+}
+#
+##########################################################################
+
+
+
+
+#
+##########################################################################
+
+#
+#
+####################################################################################################
+########################################################################     Manage App NGINX    ###
+####################################################################################################
+#
+#
+#
+# Comunica dove siamo
+cd ${WorkDir}
+echo
+echo -n "Dir di lavoro: "
+pwd
+dots-nl 1
+#
+# ELIMINARE dopo il test:
+echo
+echo "La logica di verifica delle condizioni inziali e' ** ANCORA DA FARE **"
+dots 1
+#
+#
+###
+#
+#                     DA FARE
+echo "la lettura della configurazione da file JSON e' ** ANCORA DA FARE **"
+sleep 0.5
+#
+###
+
+################################################################################
+
+
+################################################################################
+#################################################################  INIT phase OK
+echo
+echo "    INITIALIZE OK"
+echo
+#
+# CONTINUE to the menu functions
+#
+####################################################################################################
+###########################################################################     NGINX-GO  menu   ###
+####################################################################################################
+##
+#
+#==============================================================================
+echo
+echo "========================================================================="
+echo "        MAIN MENU to manage ${AppDisplayName}"
+echo "========================================================================="
+echo
+#
+sleep 3
+#
+##########################################################################
+# function to display menus
+show_menus() {
+  clear
+  echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ${MENUTAG}"
+  echo
+  echo "      G O T H I N G S   APP  MAIN  MENU"
+  echo
+  echo -n "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
+  (hostname)
+  echo
+  echo "1. SHOW        Show containers"
+  echo "2. ---         ??"
+  echo "3. ---         ??"
+  #echo "3. MySQL      ??"
+  #echo "4. WORDPRESS  ??"
+  #echo "5. PHP        ??"
+  #echo "6. NODE       ??"
+  #echo "7. ---        ??"
+  echo "8. MYADMIN     ??"
+  echo "9. UPDATE      ??"
+  echo "0. EXIT        return to console"
+}
+#
+# read input from the keyboard and take a action
+# invoke the function according to the entered number
+read_options(){
+	local choice
+  read -rsp $'Enter choice [ 1..9 or ^C to exit ] ' -n 1 choice
+  case "$choice" in
+      1) showcontainers;;
+      2) toupdate;;
+      3) toupdate;;
+      4) toupdate;;
+      5) toupdate;;
+      6) toupdate;;
+      7) toupdate;;
+      8) toupdate;;
+      9) toupdate;;  #updatemenu;;
+      0) consoleexit;;
+      *) echo -e "${RED}Error...${STD}" && sleep 2
+  esac
+}
+ 
+# ----------------------------------------------
+# Step #3: Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGQUIT SIGTSTP
+#trap '' SIGINT SIGQUIT SIGTSTP
+ 
+# -----------------------------------
+# Step #4: Main logic - infinite loop
+# ------------------------------------
+
+while true
+do
+  # internal trap
+  if [[ ${MenuTrap} -eq 67 ]]
+  then
+    echo "------------------------------------------------------"
+    echo "GOTHINGS CLOUD Control Menu was downloaded from github,"
+    echo "You can re-execute it by typing './g' at the console"
+    echo "------------------------------------------------------"
+    echo
+    break  #-- stop menu
+  fi
+  if [[ ${MenuTrap} -eq 66 ]]
+  then
+    echo 
+    echo "----------------------------------------------------------------"
+    echo " Are you sure that all necessary software was correctly loaded ?"
+    echo
+    echo " Please verify content of all JSON configuration files"
+    echo
+    echo " Please note that a working internet connection is needed to"
+    echo " dinamically update software during the first istallation and"
+    echo " during updates"
+    echo "----------------------------------------------------------------"
+    echo
+    break  #-- stop menu
+  fi
+	show_menus
+	read_options
+done
+echo
+echo "Shell terminated."
+echo
+#
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  FINE
+#
+################################################################################
+echo "per ora sono arrivato qui!"
+exit
+      if [[ -s "${filetargz}" ]]; then # file exists and length > 0
+        debuglog="${debuglog}| ${filetargz} esiste |"
+      else #                             il file non esiste, proviamo a scaricarlo
+        debuglog="${debuglog}| ${filetargz} does not exist | download githubgzfile: ${githubgzfile} |"
+        wget -O "${filetargz}" "${githubgzfile}"
+        if [[ -s "${filetargz}" ]]; then
+          debuglog="${debuglog}| ${filetargz} trovato |" #  il file e' stato trovato e verra' espanso
+          echo "    <--  archive file exists"
+        else
+          debuglog="{$debuglog}| ${filetargz} introvabile |"
+          bugmessage ERROR 66 "    file not found"
+          return 66
+        fi
+      fi
+      echo "    <--  expand archive file"
+      sudo tar xpf "${filetargz}" -C "$HOMEDIR" #   si espande l'archivio
+      temp=$?
+      if [[ ! $temp -eq 0 ]]; then
+        debuglog="{$debuglog}| ${filetargz} expansion failed! - return: ${temp} | ERROR 66"
+        bugmessage ERROR 66 "    archive expansion failed"
+        return 66
+      fi
+      # espansione effettuata:  aggiorna il .json
+      echo
+      echo "    <-- expand OK, change .json status from 'todo' to 'done'"
+
