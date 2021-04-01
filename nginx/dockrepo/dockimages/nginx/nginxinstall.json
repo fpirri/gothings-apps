@@ -1,6 +1,0 @@
-{
-  "type": "cloud",
-  "package": "nginx",
-    "status": "todo",
-   "script": "dockrepo/sysdata/cloud/cloudinstall.sh"
-}
